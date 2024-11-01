@@ -9,7 +9,8 @@ MOVEMENT_ANGLE = 2  # You can change this value to adjust all movements
 TESTING_STEPS = 30
 
 # Create an instance of SudokuPlotter with motors on Ports A and B, and the color sensor on Port 4
-sudoku_plotter = SudokuPlotter(Port.A, Port.B, Port.S4, Port.S3, Port.S2)
+# motor_x_port, motor_y_port, color_sensor_port, touch_sensor_y_port, touch_sensor_x_start_port, touch_sensor_x_end_port
+sudoku_plotter = SudokuPlotter(Port.A, Port.B, Port.S1, Port.S2, Port.S3, Port.S4)
 ev3 = EV3Brick()
 
 # Beep to indicate the start of the program
@@ -42,7 +43,8 @@ while True:
         # Call the new sensor testing function
         # sudoku_plotter.sensor_testing(MOVEMENT_ANGLE, TESTING_STEPS)
         # sudoku_plotter.bumper_testing()
-        sudoku_plotter.simultaneous_bumper_testing()
+        # sudoku_plotter.simultaneous_bumper_testing()
+        sudoku_plotter.x_bumper_cycle_with_steps()
 
     # Optional: Add a small wait to avoid spamming the button checks
     wait(100)
