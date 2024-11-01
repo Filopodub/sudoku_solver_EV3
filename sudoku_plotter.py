@@ -215,36 +215,57 @@ class SudokuPlotter:
             wait(50)  # Small delay for sensor polling
 
 
-    def x_bumper_cycle_with_steps(self, step_distance=10):
+    def x_bumper_cycle_with_steps(self, step_distance=10, steps_back=6):
         """
         Continuous cycle along the X-axis between start and end bumpers.
         Moves in steps, scanning color after each step.
         """
         # Set the initial direction to move towards the end bumper
-        self.direction = -1  # 1 for forward, -1 for backward
+        self.direction = 1  # 1 for forward, -1 for backward
+        last_position = 0   # To track the last position before bumper press
 
         while True:
+            # Move a single step in the current direction
+            self.move_x(self.direction * step_distance)
+            print("Current X position:", self.current_x)
+
+            # Scan color at each step
+            self.print_light_intensity()
+
             # Check if we have reached the start bumper and need to reverse
             if self.touch_sensor_x_start.pressed() and self.direction == -1:
                 self.stop_x()
                 self.ev3.speaker.beep()
-                self.current_x = 0  # Reset position to 0 at start
+                print("Reached start bumper; waiting for release...")
+
+                # Wait for the start bumper to be released
+                for _ in range(steps_back):
+                    self.move_x(step_distance)
+                    wait(200)
+
+                self.ev3.speaker.beep()
+                # Reset position to 0 on release
+                self.current_x = 0
+                print("Start bumper released; position reset to 0.")
                 self.direction = 1  # Change direction to forward
-                print("Reached start bumper; reset position to 0 and moving forward.")
 
             # Check if we have reached the end bumper and need to reverse
             elif self.touch_sensor_x_end.pressed() and self.direction == 1:
                 self.stop_x()
                 self.ev3.speaker.beep()
+                print("Reached end bumper; waiting for release...")
+                last_position = self.current_x
+
+                # Wait for the end bumper to be released
+                for _ in range(steps_back):
+                    self.move_x(-step_distance)
+                    wait(200)
+
+                self.ev3.speaker.beep()
+                # Set position to last position before pressing end bumper
+                self.current_x = last_position
+                print("End bumper released; position set to last position before bumper was pressed.")
                 self.direction = -1  # Change direction to backward
-                print("Reached end bumper; changing direction to backward.")
 
-            # Move a single step in the current direction
-            self.move_x(self.direction * step_distance)
-            print("Current X position:" ,self.current_x)
-
-            # Scan color at each step
-            self.print_light_intensity()
-            
             # Small delay between steps
             wait(200)
