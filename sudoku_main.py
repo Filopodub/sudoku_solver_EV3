@@ -44,7 +44,8 @@ while True:
         # sudoku_plotter.sensor_testing(MOVEMENT_ANGLE, TESTING_STEPS)
         # sudoku_plotter.bumper_testing()
         # sudoku_plotter.simultaneous_bumper_testing()
-        sudoku_plotter.x_bumper_cycle_with_steps()
+        # sudoku_plotter.x_bumper_cycle_with_steps()
+        sudoku_plotter.scanning_cycle()
 
     # Optional: Add a small wait to avoid spamming the button checks
     wait(100)
