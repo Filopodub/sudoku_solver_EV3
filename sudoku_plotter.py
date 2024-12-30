@@ -13,6 +13,7 @@ class SudokuPlotter:
         self.touch_sensor_y = TouchSensor(touch_sensor_y_port)
         self.touch_sensor_x_start = TouchSensor(touch_sensor_x_start_port)
         self.touch_sensor_x_end = TouchSensor(touch_sensor_x_end_port)
+        self.ready = False
         self.current_x = 0
         self.current_y = 0
         self.direction = 1  # 1 for forward, -1 for backward
@@ -112,13 +113,20 @@ class SudokuPlotter:
 
         self.bumper_handler_Y(step_distance)
 
+        self.ready = True
         print("All ready! Let's GOOOOOOOOOOOO!")
+        print("Press middle button to start:")
         wait(1000)
 
     def scanning_cycle(self, step_distance=10, steps_back=6):
         """Performs the scanning cycle."""
-        self.go_to_start(steps_back, step_distance)
+        if not self.ready:
+            print("Scanner is not ready. Initialize first.")
+            return  
+
+        print("Starting!")
         self.direction = 1  # 1 for forward, -1 for backward
+        self.ready = False
 
         while True:
             # Move a single step in the current direction
