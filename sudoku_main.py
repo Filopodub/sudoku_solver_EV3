@@ -15,7 +15,7 @@ ev3 = EV3Brick()
 
 # Beep to indicate the start of the program
 sudoku_plotter.beep()
-sudoku_plotter.go_to_start(6,10)
+sudoku_plotter.go_to_start(4,10)
 print("EV3 is Ready")
 
 while True:

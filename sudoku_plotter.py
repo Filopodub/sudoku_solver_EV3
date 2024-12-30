@@ -5,7 +5,7 @@ from pybricks.tools import wait
 
 
 class SudokuPlotter:
-    def __init__(self, motor_x_port, motor_y_port, color_sensor_port, touch_sensor_y_port, touch_sensor_x_start_port, touch_sensor_x_end_port, csv_file="scanned_data.txt"):
+    def __init__(self, motor_x_port, motor_y_port, color_sensor_port, touch_sensor_y_port, touch_sensor_x_start_port, touch_sensor_x_end_port, csv_file="scanned_data.csv"):
         self.ev3 = EV3Brick()
         self.motor_x = Motor(motor_x_port)
         self.motor_y = Motor(motor_y_port)
@@ -118,7 +118,7 @@ class SudokuPlotter:
         print("Press middle button to start:")
         wait(1000)
 
-    def scanning_cycle(self, step_distance=10, steps_back=6):
+    def scanning_cycle(self, step_distance=10, steps_back=4):
         """Performs the scanning cycle."""
         if not self.ready:
             print("Scanner is not ready. Initialize first.")
@@ -128,9 +128,9 @@ class SudokuPlotter:
         self.direction = 1  # 1 for forward, -1 for backward
         self.ready = False
 
-        while True:
+        while self.current_y < 2000:
             # Move a single step in the current direction
-            self.move_x(self.direction * step_distance / 10)
+            self.move_x(self.direction * step_distance / 2)
 
             print("Current position:", self.get_position())
 
@@ -140,13 +140,13 @@ class SudokuPlotter:
             # Check if we have reached the start bumper and need to reverse
             if self.touch_sensor_x_start.pressed() and self.direction == -1:
                 self.bumper_handler_X(1, steps_back, step_distance, 0)
-                self.move_y(step_distance / 10)
+                self.move_y(step_distance / 2)
                 
             # Check if we have reached the end bumper and need to reverse
             elif self.touch_sensor_x_end.pressed() and self.direction == 1:             
                 last_position = self.current_x
                 self.bumper_handler_X(-1, steps_back, -step_distance, last_position)
-                self.move_y(step_distance / 10)
+                self.move_y(step_distance / 2)
                 
             # Small delay between steps
             wait(200)
