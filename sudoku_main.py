@@ -10,12 +10,12 @@ TESTING_STEPS = 30
 
 # Create an instance of SudokuPlotter with motors on Ports A and B, and the color sensor on Port 4
 # motor_x_port, motor_y_port, color_sensor_port, touch_sensor_y_port, touch_sensor_x_start_port, touch_sensor_x_end_port
-sudoku_plotter = SudokuPlotter(Port.A, Port.B, Port.S1, Port.S2, Port.S3, Port.S4)
+sudoku_plotter = SudokuPlotter(Port.D, Port.A, Port.S4, Port.S1, Port.S2, Port.S3)
 ev3 = EV3Brick()
 
 # Beep to indicate the start of the program
 sudoku_plotter.beep()
-sudoku_plotter.go_to_start(4,10)
+sudoku_plotter.go_to_start(1,10)
 print("EV3 is Ready")
 
 while True:

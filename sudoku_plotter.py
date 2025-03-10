@@ -102,10 +102,10 @@ class SudokuPlotter:
     def go_to_start(self, steps_back, step_distance):
         """Moves to the starting position."""
         while not self.touch_sensor_x_start.pressed():
-            self.move_x(-step_distance)
+            self.move_x(step_distance)
             wait(100)
 
-        self.bumper_handler_X(1, steps_back, step_distance, 0)
+        self.bumper_handler_X(1, steps_back, -step_distance, 0)
 
         while not self.touch_sensor_y.pressed():
             self.move_y(-step_distance)
@@ -118,8 +118,9 @@ class SudokuPlotter:
         print("Press middle button to start:")
         wait(1000)
 
-    def scanning_cycle(self, step_distance=10, steps_back=4):
-        """Performs the scanning cycle."""
+
+    def scanning_cycle(self, speed=100, steps_back=1):
+        """Performs the scanning cycle with continuous movement."""
         if not self.ready:
             print("Scanner is not ready. Initialize first.")
             return  
@@ -129,24 +130,28 @@ class SudokuPlotter:
         self.ready = False
 
         while self.current_y < 2000:
-            # Move a single step in the current direction
-            self.move_x(self.direction * step_distance / 2)
+            # Start continuous movement in X direction
+            self.motor_x.run(self.direction * speed)
 
-            print("Current position:", self.get_position())
+            while not (self.touch_sensor_x_start.pressed() and self.direction == -1) and \
+                not (self.touch_sensor_x_end.pressed() and self.direction == 1):
+                
+                self.save_value()  # Continuously scan color
+                wait(100)  # Short delay for sensor reading
+                
+            # Stop X movement when bumper is reached
+            self.motor_x.stop()
 
-            # Scan color at each step
-            self.save_value()
-
-            # Check if we have reached the start bumper and need to reverse
+            # Handle bumper behavior and direction reversal
             if self.touch_sensor_x_start.pressed() and self.direction == -1:
-                self.bumper_handler_X(1, steps_back, step_distance, 0)
-                self.move_y(step_distance / 2)
-                
-            # Check if we have reached the end bumper and need to reverse
-            elif self.touch_sensor_x_end.pressed() and self.direction == 1:             
+                self.bumper_handler_X(1, steps_back, -10, 0)
+            elif self.touch_sensor_x_end.pressed() and self.direction == 1:
                 last_position = self.current_x
-                self.bumper_handler_X(-1, steps_back, -step_distance, last_position)
-                self.move_y(step_distance / 2)
-                
-            # Small delay between steps
-            wait(200)
+                self.bumper_handler_X(-1, steps_back, 10, last_position)
+
+            # Move Y continuously for the next row
+            self.motor_y.run_time(speed, 1000)  # Move Y-axis for a fixed duration
+            self.current_y += 10  # Approximate movement tracking
+
+            wait(200)  # Small delay between rows
+
