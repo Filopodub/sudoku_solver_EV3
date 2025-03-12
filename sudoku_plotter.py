@@ -55,8 +55,8 @@ class SudokuPlotter:
     def save_value(self):
         """Saves the reflection value at the current position."""
         reflection = self.color_sensor.reflection()
-        print(reflection)
-        self.row_data.append(reflection)
+        if len(self.row_data) < 360:
+            self.row_data.append(reflection)
 
     def write_row_data(self):
         """Writes the current row's data to the file."""
@@ -68,90 +68,102 @@ class SudokuPlotter:
             file.write(",".join(map(str, self.row_data)) + "\n")
         self.row_data = []  # Clear the row data for the next row
 
-    def bumper_handler_X(self, direction, steps_back, step_distance, set_position):
+    def bumper_handler_X(self, direction, set_position):
         """Handles the X-axis bumper."""
         self.beep()
-        print("Reached bumper; waiting for release...")
+        print("Reached bumper X; waiting for release...")
 
-        # Write the current row data at both bumpers (start and end)
-        self.write_row_data()
-
-        for _ in range(steps_back):
-            self.move_x(step_distance)
-            wait(200)
+        self.motor_x.run_angle(speed=500, rotation_angle=100)
+        wait(100)
 
         self.beep()
-        # Reset position to 0 on release
         self.set_X(set_position)
-        self.direction = direction  # Change direction
+        print("Bumper X released; position reset to" ,set_position)
+        self.direction = direction 
 
-    def bumper_handler_Y(self, step_distance):
+    def bumper_handler_Y(self):
         """Handles the Y-axis bumper."""
         self.beep()
-        print("Reached bumper; waiting for release...")
+        print("Reached bumper Y; waiting for release...")
 
         while self.touch_sensor_y.pressed():
-            self.move_y(step_distance)
+            self.motor_y.run_angle(speed=500, rotation_angle=100)
             wait(100)
 
         self.beep()
-        # Reset position to 0 on release
         self.set_Y(0)
-        print("Bumper released; position reset to 0.")
+        print("Bumper Y released; position reset to 0.")
 
-    def go_to_start(self, steps_back, step_distance):
+    def go_to_start(self, speed = 600):
         """Moves to the starting position."""
-        while not self.touch_sensor_x_start.pressed():
-            self.move_x(step_distance)
-            wait(100)
+        print("#### Go to start! ####")
 
-        self.bumper_handler_X(1, steps_back, -step_distance, 0)
+        # Move Motor X to start
+        self.motor_x.run(-speed)
+        
+        while not self.touch_sensor_x_start.pressed(): 
+            wait(10)  
 
-        while not self.touch_sensor_y.pressed():
-            self.move_y(-step_distance)
-            wait(100)
+        self.motor_x.stop()
+        self.bumper_handler_X(1, 0)
 
-        self.bumper_handler_Y(step_distance)
+        # Move Motor Y to start
+        self.motor_y.run(-speed)
+        
+        while not self.touch_sensor_y.pressed(): 
+            wait(10)  
 
+        self.motor_y.stop()
+        self.bumper_handler_Y()
+
+        # Set everything to ready
         self.ready = True
-        print("All ready! Let's GOOOOOOOOOOOO!")
+        print("#### All ready! ####\n")
         print("Press middle button to start:")
         wait(1000)
+       
 
 
-    def scanning_cycle(self, speed=100, steps_back=1):
+    def scanning_cycle(self, speed=300):
         """Performs the scanning cycle with continuous movement."""
+        print("#### Scanning! ####")
         if not self.ready:
             print("Scanner is not ready. Initialize first.")
             return  
 
-        print("Starting!")
         self.direction = 1  # 1 for forward, -1 for backward
         self.ready = False
 
-        while self.current_y < 2000:
+        while self.current_y < 400:
             # Start continuous movement in X direction
             self.motor_x.run(self.direction * speed)
 
             while not (self.touch_sensor_x_start.pressed() and self.direction == -1) and \
                 not (self.touch_sensor_x_end.pressed() and self.direction == 1):
                 
-                self.save_value()  # Continuously scan color
-                wait(100)  # Short delay for sensor reading
+                self.save_value()
+                self.current_x += self.direction
+                print(self.current_x)
+                wait(50)  # Short delay for sensor reading
                 
             # Stop X movement when bumper is reached
             self.motor_x.stop()
 
             # Handle bumper behavior and direction reversal
             if self.touch_sensor_x_start.pressed() and self.direction == -1:
-                self.bumper_handler_X(1, steps_back, -10, 0)
+                self.bumper_handler_X(1, 0)
             elif self.touch_sensor_x_end.pressed() and self.direction == 1:
                 last_position = self.current_x
-                self.bumper_handler_X(-1, steps_back, 10, last_position)
+                self.bumper_handler_X(-1, last_position)
+
+            self.write_row_data()
 
             # Move Y continuously for the next row
-            self.motor_y.run_time(speed, 1000)  # Move Y-axis for a fixed duration
-            self.current_y += 10  # Approximate movement tracking
+            self.motor_y.run_time(speed, 100)  # Move Y-axis for a fixed duration
+            self.current_y += 1  # Approximate movement tracking
+            print(self.current_y)
 
-            wait(200)  # Small delay between rows
+            wait(100)  # Small delay between rows
+
+        print("#### All scanned! ####\n")
 

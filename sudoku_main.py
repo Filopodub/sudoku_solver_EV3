@@ -5,7 +5,7 @@ from pybricks.tools import wait
 from sudoku_plotter import SudokuPlotter
 
 # Define a constant for the movement angle
-MOVEMENT_ANGLE = 2  # You can change this value to adjust all movements
+MOVEMENT_ANGLE = 10  # You can change this value to adjust all movements
 TESTING_STEPS = 30
 
 # Create an instance of SudokuPlotter with motors on Ports A and B, and the color sensor on Port 4
@@ -15,8 +15,8 @@ ev3 = EV3Brick()
 
 # Beep to indicate the start of the program
 sudoku_plotter.beep()
-sudoku_plotter.go_to_start(1,10)
-print("EV3 is Ready")
+sudoku_plotter.go_to_start()
+
 
 while True:
     # Wait for a button press
