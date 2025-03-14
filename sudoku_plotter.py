@@ -24,21 +24,11 @@ class SudokuPlotter:
     def init_csv_file(self):
         """Initializes the text file and writes the header."""
         with open(self.csv_file, mode="w") as file:
-            file.write("Row Data:\n")
+            file.write("")
 
     def beep(self):
         """Makes the EV3 beep."""
         self.ev3.speaker.beep()
-
-    def move_x(self, angle):
-        """Moves the X motor by the given angle."""
-        self.motor_x.run_angle(speed=500, rotation_angle=-angle)
-        self.current_x += angle
-    
-    def move_y(self, angle):
-        """Moves the Y motor by the given angle."""
-        self.motor_y.run_angle(speed=500, rotation_angle=angle*5)
-        self.current_y += angle
 
     def set_X(self, position):
         """Sets the current X position."""
@@ -55,7 +45,7 @@ class SudokuPlotter:
     def save_value(self):
         """Saves the reflection value at the current position."""
         reflection = self.color_sensor.reflection()
-        if len(self.row_data) < 360:
+        if len(self.row_data) < 400:
             self.row_data.append(reflection)
 
     def write_row_data(self):
@@ -73,7 +63,7 @@ class SudokuPlotter:
         self.beep()
         print("Reached bumper X; waiting for release...")
 
-        self.motor_x.run_angle(speed=500, rotation_angle=100)
+        self.motor_x.run_angle(500,100*direction)
         wait(100)
 
         self.beep()
@@ -87,14 +77,14 @@ class SudokuPlotter:
         print("Reached bumper Y; waiting for release...")
 
         while self.touch_sensor_y.pressed():
-            self.motor_y.run_angle(speed=500, rotation_angle=100)
+            self.motor_y.run_angle(500, 100)
             wait(100)
 
         self.beep()
         self.set_Y(0)
         print("Bumper Y released; position reset to 0.")
 
-    def go_to_start(self, speed = 600):
+    def go_to_start(self, speed = 300):
         """Moves to the starting position."""
         print("#### Go to start! ####")
 
@@ -121,10 +111,9 @@ class SudokuPlotter:
         print("#### All ready! ####\n")
         print("Press middle button to start:")
         wait(1000)
-       
+    
 
-
-    def scanning_cycle(self, speed=300):
+    def scanning_cycle(self, speed=600):
         """Performs the scanning cycle with continuous movement."""
         print("#### Scanning! ####")
         if not self.ready:
@@ -135,19 +124,37 @@ class SudokuPlotter:
         self.ready = False
 
         while self.current_y < 400:
+            # Before starting X movement, record start position
+            start_x_position = self.motor_x.angle()  # Read encoder value
+
             # Start continuous movement in X direction
             self.motor_x.run(self.direction * speed)
 
             while not (self.touch_sensor_x_start.pressed() and self.direction == -1) and \
                 not (self.touch_sensor_x_end.pressed() and self.direction == 1):
+
+                # Track the angle traveled
+                current_position = self.motor_x.angle()  # Get current position
+                angle_traveled = abs(current_position - start_x_position)
                 
-                self.save_value()
-                self.current_x += self.direction
-                print(self.current_x)
-                wait(50)  # Short delay for sensor reading
+                if angle_traveled >= 3500:
+                    self.motor_x.run(self.direction * speed/5)
+
+
+                # Save data every 10 degrees traveled
+                if angle_traveled % 10 == 0:
+                    self.save_value()
+
+                wait(1)
+                            
                 
             # Stop X movement when bumper is reached
             self.motor_x.stop()
+
+            # Measure the distance traveled in degrees
+            end_x_position = self.motor_x.angle()  # Read final encoder value
+            distance_traveled = abs(end_x_position - start_x_position)
+            print(distance_traveled)
 
             # Handle bumper behavior and direction reversal
             if self.touch_sensor_x_start.pressed() and self.direction == -1:
@@ -159,7 +166,7 @@ class SudokuPlotter:
             self.write_row_data()
 
             # Move Y continuously for the next row
-            self.motor_y.run_time(speed, 100)  # Move Y-axis for a fixed duration
+            self.motor_y.run_angle(speed, 30)  # Move Y-axis for a fixed duration
             self.current_y += 1  # Approximate movement tracking
             print(self.current_y)
 
