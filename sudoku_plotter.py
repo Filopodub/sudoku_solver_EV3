@@ -2,6 +2,7 @@ from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor, ColorSensor, TouchSensor
 from pybricks.parameters import Port
 from pybricks.tools import wait
+import time
 
 
 class SudokuPlotter:
@@ -16,8 +17,8 @@ class SudokuPlotter:
         self.ready = False
         self.current_x = 0
         self.current_y = 0
-        self.direction = 1  # 1 for forward, -1 for backward
-        self.row_data = []  # Stores data for the current row
+        self.direction = 1  
+        self.row_data = [] 
         self.csv_file = csv_file
         self.init_csv_file()
 
@@ -44,25 +45,37 @@ class SudokuPlotter:
 
     def save_value(self):
         """Saves the reflection value at the current position."""
+        # Read reflection value
         reflection = self.color_sensor.reflection()
-        if len(self.row_data) < 400:
+
+        # Ensure the row is max 360 values
+        if len(self.row_data) < 360:
             self.row_data.append(reflection)
 
     def write_row_data(self):
         """Writes the current row's data to the file."""
         # Reverse the data if the direction is backward
-        if self.direction == -1:
+        if self.direction == 1:
             self.row_data.reverse()
 
+        # Ensure the row is exactly 360 values
+        if len(self.row_data) < 360:
+            last_value = self.row_data[-1] if self.row_data else 0
+            self.row_data.extend([last_value] * (360 - len(self.row_data)))  
+
+        # Write data to the file
         with open(self.csv_file, mode="a") as file:
             file.write(",".join(map(str, self.row_data)) + "\n")
-        self.row_data = []  # Clear the row data for the next row
+
+        # Clean row
+        self.row_data = []  
 
     def bumper_handler_X(self, direction, set_position):
         """Handles the X-axis bumper."""
         self.beep()
         print("Reached bumper X; waiting for release...")
 
+        # Moves away from sensor
         self.motor_x.run_angle(500,100*direction)
         wait(100)
 
@@ -76,6 +89,7 @@ class SudokuPlotter:
         self.beep()
         print("Reached bumper Y; waiting for release...")
 
+        # Moves away from sensor
         while self.touch_sensor_y.pressed():
             self.motor_y.run_angle(500, 100)
             wait(100)
@@ -113,19 +127,21 @@ class SudokuPlotter:
         wait(1000)
     
 
-    def scanning_cycle(self, speed=600):
+    def scanning_cycle(self, speed=200):
         """Performs the scanning cycle with continuous movement."""
         print("#### Scanning! ####")
         if not self.ready:
             print("Scanner is not ready. Initialize first.")
             return  
 
+        start_time = time.time()
         self.direction = 1  # 1 for forward, -1 for backward
         self.ready = False
 
-        while self.current_y < 400:
+        while self.current_y < 30:
             # Before starting X movement, record start position
             start_x_position = self.motor_x.angle()  # Read encoder value
+            last_saved_position = start_x_position  # Track last saved angle
 
             # Start continuous movement in X direction
             self.motor_x.run(self.direction * speed)
@@ -135,17 +151,15 @@ class SudokuPlotter:
 
                 # Track the angle traveled
                 current_position = self.motor_x.angle()  # Get current position
-                angle_traveled = abs(current_position - start_x_position)
-                
-                if angle_traveled >= 3500:
-                    self.motor_x.run(self.direction * speed/5)
-
-
+                # angle_traveled = abs(current_position - start_x_position)
+                angle_traveled = abs(current_position - last_saved_position)
+                              
                 # Save data every 10 degrees traveled
-                if angle_traveled % 10 == 0:
+                if angle_traveled >= 10:  # Threshold instead of modulo
                     self.save_value()
-
-                wait(1)
+                    last_saved_position = current_position  # Update last saved position
+                    wait(40)  # Short delay for stable readings
+                                
                             
                 
             # Stop X movement when bumper is reached
@@ -172,5 +186,9 @@ class SudokuPlotter:
 
             wait(100)  # Small delay between rows
 
+        elapsed_time = time.time() - start_time
+        print("Time:", elapsed_time)
         print("#### All scanned! ####\n")
+
+
 
