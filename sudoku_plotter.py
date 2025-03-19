@@ -48,21 +48,22 @@ class SudokuPlotter:
         # Read reflection value
         reflection = self.color_sensor.reflection()
 
-        # Ensure the rows max value
-        if len(self.row_data) < 360:
+        # Ensure the rows max value (360 for avrg(365))
+        if len(self.row_data) < 375:
             self.row_data.append(reflection)
 
     def write_row_data(self):
         """Writes the current row's data to the file."""
+        print(len(self.row_data))
+
         # Reverse the data if the direction is backward
         if self.direction == 1:
             self.row_data.reverse()
 
         # Ensure the rows are the same size
-        print(len(self.row_data))
-        if len(self.row_data) < 360:
+        if len(self.row_data) < 375:
             last_value = self.row_data[-1] if self.row_data else 0
-            self.row_data.extend([last_value] * (360 - len(self.row_data)))  
+            self.row_data.extend([last_value] * (375 - len(self.row_data)))  
 
 
         # Write data to the file
@@ -140,7 +141,7 @@ class SudokuPlotter:
         self.direction = 1  # 1 for forward, -1 for backward
         self.ready = False
 
-        while self.current_y < 24:
+        while self.current_y < 40:
             # Before starting X movement, record start position
             start_x_position = self.motor_x.angle()  # Read encoder value
             last_saved_position = start_x_position  # Track last saved angle
@@ -182,7 +183,7 @@ class SudokuPlotter:
             self.write_row_data()
 
             # Move Y continuously for the next row
-            self.motor_y.run_angle(200, 30)  # Move Y-axis for a fixed duration
+            self.motor_y.run_angle(200, 18)  # Move Y-axis for a fixed duration
             self.current_y += 1  # Approximate movement tracking
             print(self.current_y)
 
