@@ -18,6 +18,7 @@ class SudokuPlotter:
         self.current_x = 0
         self.current_y = 0
         self.direction = 1  
+        self.row_cap = 375 # 98.7%
         self.row_data = [] 
         self.csv_file = csv_file
         self.init_csv_file()
@@ -48,23 +49,24 @@ class SudokuPlotter:
         # Read reflection value
         reflection = self.color_sensor.reflection()
 
-        # Ensure the rows max value (360 for avrg(365))
-        if len(self.row_data) < 375:
-            self.row_data.append(reflection)
+        self.row_data.append(reflection)
 
     def write_row_data(self):
         """Writes the current row's data to the file."""
         print(len(self.row_data))
 
+        if len(self.row_data) > self.row_cap:
+                    self.row_data = self.row_data[:self.row_cap]  
+
         # Reverse the data if the direction is backward
         if self.direction == 1:
             self.row_data.reverse()
 
-        # Ensure the rows are the same size
-        if len(self.row_data) < 375:
+        # Ensure the rows are always self.row_cap long
+        if len(self.row_data) < self.row_cap:
             last_value = self.row_data[-1] if self.row_data else 0
-            self.row_data.extend([last_value] * (375 - len(self.row_data)))  
-
+            self.row_data.extend([last_value] * (self.row_cap - len(self.row_data)))  
+        
 
         # Write data to the file
         with open(self.csv_file, mode="a") as file:
@@ -130,7 +132,7 @@ class SudokuPlotter:
         wait(1000)
     
 
-    def scanning_cycle(self, speed=200):
+    def scanning_cycle(self, speed=320):
         """Performs the scanning cycle with continuous movement."""
         print("#### Scanning! ####")
         if not self.ready:
@@ -154,14 +156,18 @@ class SudokuPlotter:
 
                 # Track the angle traveled
                 current_position = self.motor_x.angle()  # Get current position
-                # angle_traveled = abs(current_position - start_x_position)
+                
+                # Save data every 10 degrees traveled
+                if abs(current_position - start_x_position) >= 3600:  # Threshold instead of modulo
+                    self.motor_x.run(self.direction * 200)
+
                 angle_traveled = abs(current_position - last_saved_position)
                               
                 # Save data every 10 degrees traveled
                 if angle_traveled >= 10:  # Threshold instead of modulo
                     self.save_value()
                     last_saved_position = current_position  # Update last saved position
-                    wait(30)  # Short delay for stable readings
+                    wait(10)  # Short delay for stable readings
                                 
                             
                 
@@ -169,7 +175,7 @@ class SudokuPlotter:
             self.motor_x.stop()
 
             # Measure the distance traveled in degrees
-            end_x_position = self.motor_x.angle()  # Read final encoder value
+            end_x_position = self.motor_x.angle()  
             distance_traveled = abs(end_x_position - start_x_position)
             print(distance_traveled)
 
@@ -183,14 +189,14 @@ class SudokuPlotter:
             self.write_row_data()
 
             # Move Y continuously for the next row
-            self.motor_y.run_angle(200, 18)  # Move Y-axis for a fixed duration
-            self.current_y += 1  # Approximate movement tracking
-            print(self.current_y)
+            self.motor_y.run_angle(200, 22)  
+            self.current_y += 1 
+            print("###",self.current_y,"###")
 
             wait(100)  # Small delay between rows
 
         elapsed_time = time.time() - start_time
-        print("Time:", elapsed_time)
+        print("Time:", elapsed_time/60)
         print("#### All scanned! ####\n")
 
 
