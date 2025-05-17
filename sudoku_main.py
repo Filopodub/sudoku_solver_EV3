@@ -3,6 +3,8 @@ from pybricks.hubs import EV3Brick
 from pybricks.parameters import Port, Button
 from pybricks.tools import wait
 from sudoku_plotter import SudokuPlotter
+from sudoku_writer import SudokuWriter
+from added_digits import added_digits as sudoku_array
 
 # Define a constant for the movement angle
 MOVEMENT_ANGLE = 10  # You can change this value to adjust all movements
@@ -13,9 +15,15 @@ TESTING_STEPS = 30
 sudoku_plotter = SudokuPlotter(Port.D, Port.A, Port.S4, Port.S1, Port.S2, Port.S3)
 ev3 = EV3Brick()
 
+# Example usage in your main file:
+writer = SudokuWriter(Port.D, Port.A)
+
+
 # Beep to indicate the start of the program
 sudoku_plotter.beep()
 sudoku_plotter.go_to_start()
+
+
 
 while True:
     # Wait for a button press
@@ -41,7 +49,9 @@ while True:
 
     # Run the main scanning cycle with the center button
     elif Button.CENTER in pressed_buttons:
-        sudoku_plotter.scanning_cycle()
+        writer.write_sudoku(sudoku_array)
+        # sudoku_plotter.scanning_cycle()
 
     # Optional: Add a small wait to avoid spamming the button checks
     wait(100)
+
