@@ -16,7 +16,7 @@ sudoku_plotter = SudokuPlotter(Port.D, Port.A, Port.S4, Port.S1, Port.S2, Port.S
 ev3 = EV3Brick()
 
 # Example usage in your main file:
-writer = SudokuWriter(Port.D, Port.A)
+writer = SudokuWriter(Port.D, Port.A, Port.C)
 
 
 # Beep to indicate the start of the program
